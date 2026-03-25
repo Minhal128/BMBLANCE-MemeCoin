@@ -3,7 +3,7 @@ import { useInView } from 'framer-motion';
 import { useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
-import { Wallet, ArrowRight, CheckCircle, Zap, DollarSign, CreditCard, Gem, ExternalLink, Copy, Check } from 'lucide-react';
+import { Wallet, ArrowRight, CheckCircle, Zap, DollarSign, CreditCard, Gem, ExternalLink, Copy, Check, Send } from 'lucide-react';
 import { useWeb3Context } from '../context/Web3Context';
 import { CONTRACT_ADDRESS } from '../contracts/config';
 import { toast } from 'react-toastify';
@@ -18,10 +18,11 @@ const Presale = () => {
   const [error, setError] = useState('');
   const [transferTo, setTransferTo] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
-  const [isTransferring, setIsTransferring] = useState(false);
+  const [isBuying, setIsBuying] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [lastTxHash, setLastTxHash] = useState('');
 
-  const { address, balance, balanceLoading, tokenName, tokenSymbol, transfer, connectWallet, presalePurchase, addTokenToWallet } = useWeb3Context();
+  const { address, balance, balanceLoading, tokenName, tokenSymbol, transfer, connectWallet, presalePurchase, addTokenToWallet, refreshBalance } = useWeb3Context();
 
   // Countdown timer (replace with actual presale end date)
   const [timeLeft] = useState({
@@ -42,8 +43,46 @@ const Presale = () => {
   const handleAddToken = async () => {
     try {
       await addTokenToWallet();
+      toast.success('BMBL token added to MetaMask!');
     } catch (error) {
       console.error('Add token error:', error);
+      toast.error('Could not add token. Please add manually.');
+    }
+  };
+
+  // Buy tokens - adds tokens to user's wallet
+  const handleBuyTokens = async () => {
+    if (!address) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    setIsBuying(true);
+    setError('');
+
+    try {
+      console.log('🐝 Buying BMBL tokens:', amount);
+      
+      // This simulates buying tokens in testnet demo
+      // In production, this would call a presale contract
+      const receipt = await presalePurchase(amount);
+      
+      toast.success(`✅ Successfully added ${amount} BMBL to your wallet!`);
+      setLastTxHash(receipt?.transactionHash || receipt?.hash || '');
+      setAmount('');
+      
+      // Refresh balance after successful purchase
+      await refreshBalance();
+    } catch (error) {
+      console.error('Buy error:', error);
+      toast.error(error.message || 'Failed to buy tokens');
+    } finally {
+      setIsBuying(false);
     }
   };
 
@@ -109,7 +148,7 @@ const Presale = () => {
       return;
     }
 
-    setIsTransferring(true);
+    setIsSending(true);
     setError('');
 
     try {
@@ -125,11 +164,14 @@ const Presale = () => {
         autoClose: 5000,
         theme: 'dark',
       });
+      
+      // Refresh balance after successful transfer
+      await refreshBalance();
     } catch (error) {
       console.error('Transfer error:', error);
       setError(error.message || 'Transfer failed');
     } finally {
-      setIsTransferring(false);
+      setIsSending(false);
     }
   };
 
@@ -273,15 +315,93 @@ const Presale = () => {
                     </Button>
                   ) : (
                     <>
+                      {/* Buy Tokens Input */}
+                      <div className="p-4 bg-charcoal/40 rounded-lg border border-honey/20 mb-4">
+                        <label className="block text-text-primary font-medium mb-2">
+                          🐝 Buy BMBL Tokens (Presale)
+                        </label>
+                        <p className="text-xs text-text-secondary mb-3">
+                          Pay with ETH to receive BMBL tokens instantly
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            placeholder="Enter token amount (e.g. 10000000)"
+                            className="flex-1 bg-charcoal/60 border border-honey/30 rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-honey transition-colors min-w-0"
+                          />
+                          <Button 
+                            className="gap-2 bg-soft-green hover:bg-soft-green/80 text-charcoal font-bold px-6 w-full sm:w-auto shrink-0" 
+                            onClick={handleBuyTokens}
+                            disabled={isBuying || !amount || parseFloat(amount) < 10000}
+                          >
+                            {isBuying ? 'Buying...' : 'Buy'}
+                            <Gem className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {/* Show ETH cost preview */}
+                        {amount && parseFloat(amount) > 0 && (
+                          <p className="text-xs text-soft-green mt-2">
+                            💰 Cost: {(parseFloat(amount) / 10000000).toFixed(6)} ETH (Rate: 10M BMBL = 1 ETH)
+                          </p>
+                        )}
+                        <p className="text-xs text-text-secondary mt-1">
+                          Min: 10,000 BMBL (0.001 ETH) • Max: 100M BMBL (10 ETH)
+                        </p>
+                      </div>
+
+                      {/* Send Tokens Section */}
+                      <div className="p-4 bg-charcoal/40 rounded-lg border border-honey/20 mb-4">
+                        <label className="block text-text-primary font-medium mb-2">
+                          📤 Send Tokens to Anyone
+                        </label>
+                        <p className="text-xs text-text-secondary mb-3">
+                          Transfer BMBL tokens to another wallet address
+                        </p>
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            value={transferTo}
+                            onChange={(e) => setTransferTo(e.target.value)}
+                            placeholder="Recipient Address (0x...)"
+                            className="w-full bg-charcoal/60 border border-honey/30 rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-honey transition-colors font-mono text-sm"
+                          />
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                              type="number"
+                              value={transferAmount}
+                              onChange={(e) => setTransferAmount(e.target.value)}
+                              placeholder="Amount (BMBL)"
+                              className="flex-1 bg-charcoal/60 border border-honey/30 rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-honey transition-colors min-w-0"
+                            />
+                            <Button 
+                              className="gap-2 bg-honey hover:bg-honey/80 text-charcoal font-bold px-6 w-full sm:w-auto shrink-0" 
+                              onClick={handleRealTransfer}
+                              disabled={isSending || !transferTo || !transferAmount || parseFloat(transferAmount) <= 0}
+                            >
+                              {isSending ? 'Sending...' : 'Send'}
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        {error && (
+                          <p className="text-xs text-red-400 mt-2">{error}</p>
+                        )}
+                      </div>
+                      
                       <Button 
-                        className="w-full gap-2 bg-soft-green hover:bg-soft-green/80 text-charcoal font-bold" 
+                        className="w-full gap-2 bg-honey hover:bg-honey/80 text-charcoal font-bold" 
                         size="lg"
                         onClick={handleAddToken}
                         variant="secondary"
                       >
                         <Gem className="w-5 h-5" />
-                        Add Token to Wallet
+                        Show BMBL in MetaMask
                       </Button>
+                      <p className="text-xs text-text-secondary text-center">
+                        This adds BMBL token to MetaMask so you can see your balance
+                      </p>
                     </>
                   )}
                 </div>
@@ -408,110 +528,28 @@ const Presale = () => {
           </motion.div>
         </div>
 
-        {/* Real Transfer Section */}
-        {address && (
+        {/* Transaction Status */}
+        {address && lastTxHash && (
           <motion.div
-            id="transfer-section"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="mt-16 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 max-w-2xl mx-auto"
           >
-            <Card className="bg-gradient-to-br from-soft-green/10 to-honey/10 border-2 border-soft-green/30">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-honey mb-2">🐝 Transfer BMBL Tokens</h3>
-                  <p className="text-text-secondary">Send tokens to any wallet address on Sepolia Testnet</p>
-                  <p className="text-sm text-soft-green mt-2 font-bold">Your Balance: {balance} BMBL</p>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Recipient Address */}
-                  <div>
-                    <label className="block text-text-primary font-medium mb-2">
-                      Recipient Address
-                    </label>
-                    <input
-                      type="text"
-                      value={transferTo}
-                      onChange={(e) => setTransferTo(e.target.value)}
-                      placeholder="0x742d35Cc6634C0532925a3b8D4C9db96590e4CAb"
-                      className="w-full bg-charcoal/60 border border-soft-green/30 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-soft-green transition-colors"
-                    />
-                  </div>
-
-                  {/* Transfer Amount */}
-                  <div>
-                    <label className="block text-text-primary font-medium mb-2">
-                      Amount (BMBL)
-                    </label>
-                    <input
-                      type="number"
-                      value={transferAmount}
-                      onChange={(e) => setTransferAmount(e.target.value)}
-                      placeholder="100"
-                      step="1"
-                      min="0"
-                      max={balance}
-                      className="w-full bg-charcoal/60 border border-soft-green/30 rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:border-soft-green transition-colors"
-                    />
-                  </div>
-
-                  {/* Transfer Button */}
-                  <Button 
-                    className="w-full gap-2 bg-honey hover:bg-honey/80 text-charcoal font-bold" 
-                    size="lg"
-                    onClick={handleRealTransfer}
-                    disabled={isTransferring || !transferTo || !transferAmount}
-                  >
-                    {isTransferring ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-charcoal"></div>
-                        Processing Transaction...
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="w-5 h-5" />
-                        Send BMBL Tokens
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Last Transaction */}
-                  {lastTxHash && (
-                    <div className="mt-4 p-4 bg-soft-green/10 rounded-lg border border-soft-green/30">
-                      <p className="text-soft-green font-medium mb-2">✅ Transaction Successful!</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-text-secondary">TX Hash:</p>
-                        <a 
-                          href={`https://sepolia.etherscan.io/tx/${lastTxHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-honey hover:underline text-sm font-mono break-all"
-                        >
-                          {lastTxHash}
-                        </a>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => navigator.clipboard.writeText(lastTxHash)}
-                          className="ml-auto"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Error Display */}
-                  {error && (
-                    <div className="mt-4 p-4 bg-red-500/10 rounded-lg border border-red-500/30">
-                      <p className="text-red-400 text-sm">{error}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="p-4 bg-soft-green/10 rounded-lg border border-soft-green/30">
+              <p className="text-soft-green font-medium mb-2">✅ Last Transaction Successful!</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm text-text-secondary">TX:</p>
+                <a 
+                  href={`https://sepolia.etherscan.io/tx/${lastTxHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-honey hover:underline text-sm font-mono break-all"
+                >
+                  {lastTxHash.substring(0, 20)}...{lastTxHash.substring(lastTxHash.length - 10)}
+                </a>
+                <ExternalLink className="w-4 h-4 text-honey" />
+              </div>
+            </div>
           </motion.div>
         )}
       </div>

@@ -1,6 +1,6 @@
 {
   "network": "sepolia",
-  "contractAddress": "0x1778b1F4C7DeDDCD9ddAacB036225DB9Bfc433E6",
+  "contractAddress": "0x438C732469bead57dD28Db3887d0113c0a00B64e",
   "contractName": "BMBLANCE",
   "deployer": "0x2aB64e54AE5e0E98291A0de55869af3d7c692816",
   "donationWallet": "0x2aB64e54AE5e0E98291A0de55869af3d7c692816",
@@ -16,7 +16,7 @@
     "donation": 200,
     "liquidity": 200
   },
-  "deploymentDate": "2025-11-13T20:08:51.517Z",
-  "explorerUrl": "https://sepolia.etherscan.io/address/0x1778b1F4C7DeDDCD9ddAacB036225DB9Bfc433E6",
-  "verificationCommand": "npx hardhat verify --network sepolia 0x1778b1F4C7DeDDCD9ddAacB036225DB9Bfc433E6 \"0x2aB64e54AE5e0E98291A0de55869af3d7c692816\" \"0x2aB64e54AE5e0E98291A0de55869af3d7c692816\""
+  "deploymentDate": "2025-12-01T11:37:25.667Z",
+  "explorerUrl": "https://sepolia.etherscan.io/address/0x438C732469bead57dD28Db3887d0113c0a00B64e",
+  "verificationCommand": "npx hardhat verify --network sepolia 0x438C732469bead57dD28Db3887d0113c0a00B64e \"0x2aB64e54AE5e0E98291A0de55869af3d7c692816\" \"0x2aB64e54AE5e0E98291A0de55869af3d7c692816\""
 }

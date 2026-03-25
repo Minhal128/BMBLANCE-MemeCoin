@@ -1,10 +1,10 @@
 // BMBLANCE Token Contract Configuration
 // Auto-generated during deployment
 
-export const CONTRACT_ADDRESS = "0x1778b1F4C7DeDDCD9ddAacB036225DB9Bfc433E6";
+export const CONTRACT_ADDRESS = "0x438C732469bead57dD28Db3887d0113c0a00B64e";
 export const NETWORK_ID = 11155111; // Sepolia
 export const NETWORK_NAME = "Sepolia Testnet";
-export const RPC_URL = "https://eth-sepolia.g.alchemy.com/v2/demo";
+export const RPC_URL = "https://rpc.sepolia.org";
 export const EXPLORER_URL = "https://sepolia.etherscan.io";
 
 export const TOKEN_INFO = {

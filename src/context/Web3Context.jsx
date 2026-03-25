@@ -39,26 +39,32 @@ export const Web3ContextProvider = ({ children }) => {
     fetchTokenInfo();
   }, [contract]);
 
+  // Function to refresh balance - can be called manually
+  const refreshBalance = async () => {
+    try {
+      if (address && contract) {
+        setBalanceLoading(true);
+        const bal = await contract?.call('balanceOf', [address]);
+        const formatted = ethers.utils.formatUnits(bal.toString(), tokenDecimals || 18);
+        setBalance(formatted);
+        console.log('✅ Balance refreshed:', formatted);
+        return formatted;
+      } else {
+        setBalance('0');
+        return '0';
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      setBalance('0');
+      return '0';
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
   // Fetch balance when address or contract changes
   useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        if (address && contract) {
-          setBalanceLoading(true);
-          const bal = await contract?.call('balanceOf', [address]);
-          const formatted = ethers.utils.formatUnits(bal.toString(), tokenDecimals || 18);
-          setBalance(formatted);
-        } else {
-          setBalance('0');
-        }
-      } catch (error) {
-        console.error('Error fetching balance:', error);
-        setBalance('0');
-      } finally {
-        setBalanceLoading(false);
-      }
-    };
-    fetchBalance();
+    refreshBalance();
   }, [address, contract, tokenDecimals]);
 
   const handleDisconnect = async () => {
@@ -104,39 +110,73 @@ export const Web3ContextProvider = ({ children }) => {
     }
   };
 
-  const handlePresalePurchase = async (ethAmount) => {
+  const handlePresalePurchase = async (tokenAmount) => {
     try {
       if (!address || !contract) {
         throw new Error('Wallet not connected');
       }
 
-      // For presale: calculate tokens based on ETH amount
-      // Using a simple ratio: 1 ETH = 10,000,000 BMBL (adjust as needed)
-      const tokensPerEth = 10000000;
-      const tokenAmount = parseFloat(ethAmount) * tokensPerEth;
+      // User enters the token amount they want to buy
+      const amount = parseFloat(tokenAmount);
       
-      const amountInWei = ethers.utils.parseUnits(tokenAmount.toString(), tokenDecimals || 18);
+      // Validate amount
+      if (amount <= 0 || amount > 1000000000) {
+        throw new Error('Please enter an amount between 1 and 1,000,000,000 tokens');
+      }
+      
+      // Presale rate: 1 ETH = 10,000,000 BMBL (from contract)
+      const tokensPerEth = 10000000;
+      const ethRequired = amount / tokensPerEth;
+      
+      // Validate minimum (0.001 ETH) and maximum (10 ETH) from contract
+      if (ethRequired < 0.001) {
+        throw new Error('Minimum purchase is 0.001 ETH (10,000 BMBL)');
+      }
+      if (ethRequired > 10) {
+        throw new Error('Maximum purchase is 10 ETH per transaction');
+      }
       
       console.log('🎁 Processing presale purchase...');
-      console.log('ETH Amount:', ethAmount);
-      console.log('Token Amount:', tokenAmount);
-      console.log('Amount in Wei:', amountInWei.toString());
+      console.log('Token Amount:', amount, 'BMBL');
+      console.log('ETH Required:', ethRequired, 'ETH');
       
-      // Send tokens to the user's address
-      const tx = await contract?.call('transfer', [address, amountInWei]);
+      // Show user the ETH cost
+      toast.info(`💰 Sending ${ethRequired.toFixed(6)} ETH for ${amount.toLocaleString()} BMBL...`, {
+        autoClose: 5000,
+      });
+      
+      // Call the buyTokens function with ETH value
+      const ethInWei = ethers.utils.parseEther(ethRequired.toString());
+      
+      const tx = await contract?.call('buyTokens', [], {
+        value: ethInWei,
+      });
       
       console.log('✅ Presale purchase confirmed:', tx);
-      toast.success('Presale purchase successful!');
+      toast.success(`🎉 Successfully purchased ${amount.toLocaleString()} BMBL tokens!`, {
+        autoClose: 5000,
+      });
 
-      // Refresh balance
-      const bal = await contract?.call('balanceOf', [address]);
-      const formatted = ethers.utils.formatUnits(bal.toString(), tokenDecimals || 18);
-      setBalance(formatted);
+      // Refresh balance after purchase
+      await refreshBalance();
 
       return tx;
     } catch (error) {
       console.error('Presale purchase error:', error);
-      toast.error('Presale purchase failed');
+      
+      // Better error messages
+      let errorMsg = error.message || 'Presale purchase failed';
+      if (errorMsg.includes('insufficient funds')) {
+        errorMsg = 'Insufficient ETH balance for this purchase';
+      } else if (errorMsg.includes('Presale is not active')) {
+        errorMsg = 'Presale is currently not active';
+      } else if (errorMsg.includes('Below minimum')) {
+        errorMsg = 'Below minimum purchase amount (0.001 ETH)';
+      } else if (errorMsg.includes('Exceeds maximum')) {
+        errorMsg = 'Exceeds maximum purchase amount (10 ETH)';
+      }
+      
+      toast.error(errorMsg);
       throw error;
     }
   };
@@ -225,6 +265,7 @@ export const Web3ContextProvider = ({ children }) => {
     transfer: handleTransfer,
     presalePurchase: handlePresalePurchase,
     addTokenToWallet,
+    refreshBalance,
   };
 
   return (

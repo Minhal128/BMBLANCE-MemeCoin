@@ -223,6 +223,91 @@ contract BMBLANCE is ERC20, Ownable, ReentrancyGuard {
         _burn(msg.sender, amount);
     }
     
+    // ============================================
+    // PRESALE FUNCTIONALITY
+    // ============================================
+    
+    uint256 public tokenPrice = 10000000; // 10 million tokens per 1 ETH (adjustable)
+    bool public presaleActive = true;
+    uint256 public presaleMinPurchase = 0.001 ether; // Minimum 0.001 ETH
+    uint256 public presaleMaxPurchase = 10 ether;    // Maximum 10 ETH per transaction
+    
+    event TokensPurchased(address indexed buyer, uint256 ethAmount, uint256 tokenAmount);
+    event PresaleStatusChanged(bool active);
+    event TokenPriceUpdated(uint256 newPrice);
+    
+    /**
+     * @dev Buy tokens with ETH - Main presale function
+     * Users send ETH, receive BMBL tokens from owner's balance
+     */
+    function buyTokens() external payable nonReentrant {
+        require(presaleActive, "Presale is not active");
+        require(msg.value >= presaleMinPurchase, "Below minimum purchase");
+        require(msg.value <= presaleMaxPurchase, "Exceeds maximum purchase");
+        
+        // Calculate token amount based on ETH sent
+        uint256 tokenAmount = (msg.value * tokenPrice * 10**decimals()) / 1 ether;
+        
+        // Check owner has enough tokens
+        require(balanceOf(owner()) >= tokenAmount, "Insufficient presale tokens");
+        
+        // Transfer tokens from owner to buyer
+        _transferStandard(owner(), msg.sender, tokenAmount);
+        
+        emit TokensPurchased(msg.sender, msg.value, tokenAmount);
+        emit Transfer(owner(), msg.sender, tokenAmount);
+    }
+    
+    /**
+     * @dev Toggle presale on/off (owner only)
+     */
+    function setPresaleActive(bool _active) external onlyOwner {
+        presaleActive = _active;
+        emit PresaleStatusChanged(_active);
+    }
+    
+    /**
+     * @dev Update token price (owner only)
+     * @param _newPrice Number of tokens per 1 ETH
+     */
+    function setTokenPrice(uint256 _newPrice) external onlyOwner {
+        require(_newPrice > 0, "Price must be greater than 0");
+        tokenPrice = _newPrice;
+        emit TokenPriceUpdated(_newPrice);
+    }
+    
+    /**
+     * @dev Update presale limits (owner only)
+     */
+    function setPresaleLimits(uint256 _min, uint256 _max) external onlyOwner {
+        require(_min < _max, "Min must be less than max");
+        presaleMinPurchase = _min;
+        presaleMaxPurchase = _max;
+    }
+    
+    /**
+     * @dev Get presale info
+     */
+    function getPresaleInfo() external view returns (
+        bool active,
+        uint256 price,
+        uint256 minPurchase,
+        uint256 maxPurchase,
+        uint256 availableTokens
+    ) {
+        return (
+            presaleActive,
+            tokenPrice,
+            presaleMinPurchase,
+            presaleMaxPurchase,
+            balanceOf(owner())
+        );
+    }
+    
+    // ============================================
+    // END PRESALE FUNCTIONALITY
+    // ============================================
+    
     /**
      * @dev Emergency withdraw tokens sent to contract by mistake
      */
@@ -238,8 +323,18 @@ contract BMBLANCE is ERC20, Ownable, ReentrancyGuard {
     
     /**
      * @dev Withdraw ETH from contract (owner only)
+     * This is how you collect the ETH from presale for charity!
      */
     function withdrawETH() external onlyOwner nonReentrant {
-        payable(owner()).transfer(address(this).balance);
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+        payable(owner()).transfer(balance);
+    }
+    
+    /**
+     * @dev Check contract ETH balance
+     */
+    function getContractETHBalance() external view returns (uint256) {
+        return address(this).balance;
     }
 }
