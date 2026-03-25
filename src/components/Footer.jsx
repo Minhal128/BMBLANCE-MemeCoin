@@ -1,4 +1,24 @@
-import { Twitter, Send, MessageCircle, Github, Globe2, Sparkles } from 'lucide-react';
+import { Globe2, Sparkles } from 'lucide-react';
+
+const InstaIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+    <circle cx="12" cy="12" r="3.2"></circle>
+    <circle cx="17.5" cy="6.5" r="0.5"></circle>
+  </svg>
+);
+
+const RedditIcon = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <circle cx="12" cy="12" r="4.5"></circle>
+    <path d="M16 12c.5 1 1.5 1.5 2.5 1.5" />
+    <path d="M8 12c-.5 1-1.5 1.5-2.5 1.5" />
+    <circle cx="9.2" cy="11.2" r="0.5"></circle>
+    <circle cx="14.8" cy="11.2" r="0.5"></circle>
+    <path d="M18 7l-3 .8" />
+    <circle cx="18" cy="7" r="0.6" />
+  </svg>
+);
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -14,10 +34,8 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: <Twitter className="w-5 h-5" />, href: '#', name: 'Twitter' },
-    { icon: <Send className="w-5 h-5" />, href: '#', name: 'Telegram' },
-    { icon: <MessageCircle className="w-5 h-5" />, href: '#', name: 'Discord' },
-    { icon: <Github className="w-5 h-5" />, href: '#', name: 'GitHub' },
+    { icon: <RedditIcon className="w-5 h-5" />, href: 'https://ads.reddit.com/business/14749ea5-c36b-49d3-9c46-1f3da877023e', name: 'Reddit' },
+    { icon: <InstaIcon className="w-5 h-5" />, href: 'https://www.instagram.com/prislupsky292/', name: 'Instagram' },
   ];
 
   const walletAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4";

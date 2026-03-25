@@ -1,4 +1,4 @@
-import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-ethers";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -26,9 +26,6 @@ export default {
     hardhat: {
       chainId: 1337
     }
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY || ""
   },
   paths: {
     sources: "./contracts",
