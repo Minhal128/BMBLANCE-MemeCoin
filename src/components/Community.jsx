@@ -2,7 +2,15 @@ import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { Button } from './ui/button';
-import { MessageCircle, Twitter, Send, Users as UsersIcon, Headphones, Gift, Vote, Sparkles } from 'lucide-react';
+import { Users as UsersIcon, Headphones, Gift, Vote, Sparkles } from 'lucide-react';
+
+const InstaIcon = ({ className = 'w-8 h-8' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+    <circle cx="12" cy="12" r="3.2"></circle>
+    <circle cx="17.5" cy="6.5" r="0.5"></circle>
+  </svg>
+);
 import CountUp from 'react-countup';
 
 const Community = () => {
@@ -11,10 +19,8 @@ const Community = () => {
 
   const handleSocialClick = (platform) => {
     const links = {
-      Telegram: "https://t.me/bmblance",
-      Twitter: "https://twitter.com/bmblance",
-      Discord: "https://discord.gg/bmblance",
-      Reddit: "https://reddit.com/r/bmblance"
+      Reddit: "https://ads.reddit.com/business/14749ea5-c36b-49d3-9c46-1f3da877023e",
+      Instagram: "https://www.instagram.com/prislupsky292/"
     };
     if (links[platform]) {
       window.open(links[platform], '_blank');
@@ -23,32 +29,18 @@ const Community = () => {
 
   const socialLinks = [
     {
-      name: "Telegram",
-      icon: <Send className="w-8 h-8" />,
-      followers: "25K+",
-      color: "from-blue-400 to-blue-600",
-      link: "https://t.me/bmblance"
-    },
-    {
-      name: "Twitter",
-      icon: <Twitter className="w-8 h-8" />,
-      followers: "18K+",
-      color: "from-sky-400 to-blue-500",
-      link: "https://twitter.com/bmblance"
-    },
-    {
-      name: "Discord",
-      icon: <MessageCircle className="w-8 h-8" />,
-      followers: "12K+",
-      color: "from-indigo-400 to-purple-600",
-      link: "https://discord.gg/bmblance"
-    },
-    {
       name: "Reddit",
       icon: <UsersIcon className="w-8 h-8" />,
       followers: "8K+",
       color: "from-orange-400 to-red-600",
-      link: "https://reddit.com/r/bmblance"
+      link: "https://ads.reddit.com/business/14749ea5-c36b-49d3-9c46-1f3da877023e"
+    },
+    {
+      name: "Instagram",
+      icon: <InstaIcon className="w-8 h-8" />,
+      followers: "",
+      color: "from-pink-400 to-pink-600",
+      link: "https://www.instagram.com/prislupsky292/"
     }
   ];
 
@@ -104,14 +96,14 @@ const Community = () => {
         </motion.div>
 
         {/* Social Links Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="flex flex-col sm:flex-row gap-6 mb-16 justify-center items-center">
           {socialLinks.map((social, index) => (
             <motion.div
               key={social.name}
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-              className="group relative overflow-hidden rounded-2xl cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl cursor-pointer max-w-md w-full"
               onClick={() => handleSocialClick(social.name)}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${social.color} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
@@ -133,7 +125,8 @@ const Community = () => {
           ))}
         </div>
 
-        {/* CTA Section */}
+        {/*
+        CTA Section (commented out per request)
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -170,6 +163,7 @@ const Community = () => {
             </div>
           </div>
         </motion.div>
+        */}
 
         {/* Community Highlights */}
         <motion.div
